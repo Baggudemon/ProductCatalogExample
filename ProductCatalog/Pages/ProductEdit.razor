@@ -1,0 +1,163 @@
+﻿@page "/productEdit"
+
+@using ProductCatalog.DB.Entities
+@using ProductCatalog.Services
+
+@inject ProductRepository productRepository
+
+<h3>Product Edit</h3>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>ProductType</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var product in products)
+        {
+            <tr>
+                <td>
+                    @if (IsEditing(product.Id))
+                    {
+                        <input type="text" class="form-control" @bind="@product.Name" />
+                    }
+                    else
+                    {
+                        @product.Name
+                    }
+                </td>
+                <td>
+                    @if (IsEditing(product.Id))
+                    {
+                        <select class="form-control" @bind="@product.ProductTypeId">
+                            @foreach (var type in productTypes)
+                            {
+                                <option value="@type.Id">@type.Name</option>
+                            }
+                        </select>
+                    }
+                    else
+                    {
+                        var selectedDesc = productTypes.FirstOrDefault(p => p.Id == product.ProductTypeId);
+                        @selectedDesc?.Name
+                    }
+                </td>
+                <td>
+                    @if (IsEditing(product.Id))
+                    {
+                        <button class="btn btn-link" @onclick="() => SaveChanges(product)">Save</button>
+                        <button class="btn btn-link" @onclick="CancelEdit">Cancel</button>
+                        <button class="btn btn-link" @onclick="() => DeleteProduct(product)">
+                            <i class="bi bi-x"></i> Delete
+                        </button>
+                    }
+                    else
+                    {
+                        <button class="btn btn-link" @onclick="() => EditProduct(product.Id)">Edit</button>
+                    }
+                </td>
+            </tr>
+        }
+        @if (showAddProductTypeRow)
+        {
+            <tr>
+                <td>
+                    <input type="text" class="form-control @(IsNewProductValid ? "is-invalid" : "")" @bind="@newProduct.Name" placeholder="Enter Name" />
+                    @if (IsNewProductValid)
+                    {
+                        <div class="invalid-feedback">Name is required.</div>
+                    }
+                </td>
+                <td>
+                    <select class="form-control" @bind="@newProduct.ProductTypeId">
+                        @foreach (var productType in productTypes)
+                        {
+                            <option value="@productType.Id">@productType.Name</option>
+                        }
+                    </select>
+                </td>
+                <td>
+                    <button class="btn btn-link" @onclick="AddProduct">Add</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<div class="row mt-3">
+    <div class="col">
+        <button class="btn btn-link" @onclick="ToggleAddProductRow">@(!showAddProductTypeRow ? "Add Product" : "Hide Add Product")</button>
+    </div>
+</div>
+
+@code {
+    List<Product> products = new List<Product>();
+    List<ProductType> productTypes = new List<ProductType>();
+
+    Product newProduct = new Product();
+
+    int? editingProductTypeId = null;
+    bool hasAddProductTypeError;
+    bool showAddProductTypeRow;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProductTypes();
+        showAddProductTypeRow = false;
+    }
+
+    private bool IsNewProductValid => string.IsNullOrEmpty(newProduct.Name) && hasAddProductTypeError;
+    private bool IsEditing(int productTypeId) => productTypeId == editingProductTypeId;
+
+    private async Task LoadProductTypes()
+    {
+        products = await productRepository.GetProducts();
+        productTypes = await productRepository.GetProductTypes();
+    }
+
+    private void ToggleAddProductRow()
+    {
+        showAddProductTypeRow = !showAddProductTypeRow;
+        newProduct = new Product();
+    }
+
+    private void EditProduct(int productTypeId)
+    {
+        editingProductTypeId = productTypeId;
+    }
+
+    private async Task CancelEdit()
+    {
+        editingProductTypeId = null;
+        await LoadProductTypes();
+    }
+
+    private async Task SaveChanges(Product product)
+    {
+        await productRepository.UpdateProduct(product);
+        editingProductTypeId = null;
+        await LoadProductTypes();
+    }
+
+    private async Task DeleteProduct(Product product)
+    {
+        await productRepository.DeleteProduct(product);
+        await LoadProductTypes();
+    }
+
+    private async Task AddProduct()
+    {
+        hasAddProductTypeError = string.IsNullOrEmpty(newProduct.Name);
+        if (hasAddProductTypeError)
+            return;
+
+        await productRepository.AddProduct(newProduct);
+        await LoadProductTypes();
+
+        showAddProductTypeRow = false;
+        newProduct = new Product();
+    }
+}
