@@ -7,7 +7,7 @@
 
 ### Запуск проекту
 
-1. Перейдіть до директорії проекту за допомогою команди `cd {path to repository}/SystemSoftApi` каталог в якому знаходиться файл SystemSoftApi.csproj.
+1. Перейдіть до директорії проекту за допомогою команди `cd {path to repository}/ProductCatalog` каталог в якому знаходиться файл ProductCatalog.csproj.
 2. Запустіть проект командою `dotnet run`.
 3. Відкрийте у браузері адресу [https://localhost:7299/](https://localhost:7299/), щоб переглянути роботу.
 
